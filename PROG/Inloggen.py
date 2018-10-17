@@ -7,6 +7,11 @@ import xmltodict
 import sqlite3
 
 
+def bezoekers(titel):
+    cur.execute('SELECT User FROM Tickets WHERE Film = ?', (titel[0],))
+    print (cur.fetchall())
+
+
 def api_ophalen(dag):
     # dag = 0: Vandaag
     # dag = 1: Morgen
@@ -71,34 +76,57 @@ def inloggen():
         print ("Verkeerde gegevens!")
 
 def aanbieder():
-    print("Welkom aanbieder!")
-    print("\n")
-    menu = int(input("1. Beschibare films om aan te bieden.\n2. Mijn Films\n\n>>"))
-    if menu == 1:
-        print("Films Beschikbaar om aan te bieden:\n\n")
-        cur.execute('SELECT titel FROM Films WHERE aanbieder = "0"')
-        number = 0
-        titels = cur.fetchall()
-        for titel in titels:
-            number += 1
-            print("{}. {} ".format(number, titel[0]))
-        q = int(input("Welke Film wil je zelf aanbieden?: "))
-        print (titels[q - 1][0])
-        cur.execute('UPDATE Films SET aanbieder = ? WHERE titel = ?', (naam, titels[q - 1][0]))
-        con.commit()
-    elif menu == 2:
-        cur.execute('SELECT titel FROM Films WHERE aanbieder = ?', (naam,))
-        for titels in cur.fetchall():
-            print(titels[0])
+    while True:
+        print("Welkom aanbieder!")
+        print("\n")
+        menu = int(input("1. Beschibare films om aan te bieden.\n2. Mijn Films\n3. Uitloggen\n\n>>"))
+        if menu == 1:
+            print("Films Beschikbaar om aan te bieden:\n\n")
+            cur.execute('SELECT titel FROM Films WHERE aanbieder = "0"')
+            number = 0
+            titels = cur.fetchall()
+            for titel in titels:
+                number += 1
+                print("{}. {} ".format(number, titel[0]))
+            q = int(input("Welke Film wil je zelf aanbieden?: "))
+            print (titels[q - 1][0])
+            cur.execute('UPDATE Films SET aanbieder = ? WHERE titel = ?', (naam, titels[q - 1][0]))
+            con.commit()
+        elif menu == 2:
+            cur.execute('SELECT titel FROM Films WHERE aanbieder = ?', (naam,))
+            number = 0
+            titels = cur.fetchall()
+            for titel in titels:
+                number += 1
+                print("{}. {} ".format(number, titel[0]))
+            q = int(input("Bekijk welke bezoekers je krijgt: "))
+            bezoekers(titels[q - 1])
+        elif menu == 3:
+            exit()
 def gebruiker():
-    print("Welkom aanbieder!")
-    print("\n")
-    menu = int(input("1. Beschibare films om te bekijken.\n2. Mijn Films\n\n>>"))
-    if menu == 1:
-        cur.execute('SELECT titel FROM Films WHERE NOT aanbieder = "0"')
-        for titels in cur.fetchall():
-            print(titels[0])
-
+    while True:
+        print("Welkom gebruiker!")
+        print("\n")
+        menu = int(input("1. Beschibare films om te bekijken.\n2. Mijn Films\n3. Uitloggen\n\n>>"))
+        if menu == 1:
+            print("Films Beschikbaar om aan te bieden:\n\n")
+            cur.execute('SELECT titel FROM Films WHERE NOT aanbieder = "0"')
+            number = 0
+            titels = cur.fetchall()
+            cur.execute('SELECT Film FROM Tickets WHERE User = ?', (naam,))
+            btitels = list(set(titels) - set(cur.fetchall()))
+            for titel in btitels:
+                number += 1
+                print("{}. {} ".format(number, titel[0]))
+            q = int(input("Welke Film wil je kijken?: "))
+            print(btitels[q - 1][0])
+            cur.execute('INSERT INTO Tickets VALUES (?, ?)', ( naam, btitels[q - 1][0]),)
+            con.commit()
+        elif menu == 2:
+            cur.execute('SELECT Film FROM Tickets WHERE User = ?', (naam,))
+            print(cur.fetchall())
+        elif menu == 3:
+            exit()
 con = sqlite3.connect('film.db')
 cur = con.cursor()
 
