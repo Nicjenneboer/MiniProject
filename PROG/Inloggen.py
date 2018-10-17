@@ -5,6 +5,7 @@ import datetime
 import xml.etree.ElementTree as ET
 import xmltodict
 import sqlite3
+import base64
 
 
 def bezoekers(titel):
@@ -13,8 +14,10 @@ def bezoekers(titel):
 
 
 def api_ophalen(dag):
+
     # dag = 0: Vandaag
     # dag = 1: Morgen
+    global date
     key = "z9rqxl4qlkw14ozm3z5721oscmu88zoz"
     datenow = datetime.datetime.now()
     if dag == 0:
@@ -37,6 +40,11 @@ def api_ophalen(dag):
             cur.execute("INSERT INTO Films VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", field)
             con.commit()
         field = []
+    yesterday = str(int(datenow.strftime("%d")) - 1) + datenow.strftime("-%m-%Y")
+    cur.execute('DELETE FROM Films WHERE datum=?', (yesterday,))
+    cur.execute('DELETE FROM Tickets WHERE datum=?', (yesterday,))
+    con.commit()
+    con.commit()
 
 def create_users(auth):
     naam = input("Naam: ")
@@ -120,11 +128,22 @@ def gebruiker():
                 print("{}. {} ".format(number, titel[0]))
             q = int(input("Welke Film wil je kijken?: "))
             print(btitels[q - 1][0])
-            cur.execute('INSERT INTO Tickets VALUES (?, ?)', ( naam, btitels[q - 1][0]),)
+            cur.execute('SELECT datum FROM Films WHERE titel = ?', (btitels[q - 1][0],))
+            datum = cur.fetchall()[0][0]
+            code = hashlib.sha256((naam + btitels[q - 1][0]).encode()).hexdigest()
+            cur.execute('INSERT INTO Tickets VALUES (?, ?, ?, ?)', ( naam, btitels[q - 1][0], code, datum))
             con.commit()
+            print (code)
         elif menu == 2:
             cur.execute('SELECT Film FROM Tickets WHERE User = ?', (naam,))
-            print(cur.fetchall())
+            number = 0
+            titels = cur.fetchall()
+            for titel in titels:
+                number += 1
+                print("{}. {} ".format(number, titel[0]))
+            q = int(input("Bekijk de toegangs code: "))
+            cur.execute('SELECT code FROM Tickets WHERE Film = ?', (titels[q - 1][0],))
+            print (cur.fetchall()[0][0])
         elif menu == 3:
             exit()
 con = sqlite3.connect('film.db')
