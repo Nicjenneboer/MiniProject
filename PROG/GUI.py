@@ -7,10 +7,9 @@ import hashlib
 from urllib.request import urlopen
 from PIL import Image, ImageTk
 import io
+
+
 #API TO DATABASE FUNCITES
-from PIL import ImageTk
-
-
 def api_ophalen(dag):
     global date
     key = "z9rqxl4qlkw14ozm3z5721oscmu88zoz"
@@ -61,6 +60,7 @@ def toonLoginFrame():
     aanbiederhoofdframe.pack_forget()
     registerframe.pack_forget()
     loginframe.pack()
+    Loginscreen()
 
 def toonGebruikerHoofdFrame():
     aanbiederhoofdframe.pack_forget()
@@ -79,6 +79,7 @@ def toonRegisterFrame():
     gebruikerhoofdframe.pack_forget()
     aanbiederhoofdframe.pack_forget()
     registerframe.pack()
+    Registerscreen()
 
 #Button click functies
 
@@ -131,9 +132,7 @@ def registreer_clicked(auth, usern, userp, userpc):
 
 def Loginscreen():
     global wrong_input_login
-
-
-
+    BACKGROUND(loginframe, 'img/background.png')
     username_entry = Entry(master=loginframe, width=25, font=('Verdana', 15))
     userpass_entry = Entry(master=loginframe, width=25, font=('Verdana', 15), show="*")
     username_label = Label(master=loginframe, text="Gebruikersnaam:", font=('Verdana', 15))
@@ -154,6 +153,7 @@ def Loginscreen():
 
 
 def Registerscreen():
+    BACKGROUND(registerframe, 'img/background.png')
     v = IntVar()
     aanbieder = Radiobutton(registerframe, text="Aanbieder", variable=v, value=1)
     gebruiker = Radiobutton(registerframe, text="Gebruiker", variable=v, value=0)
@@ -166,7 +166,6 @@ def Registerscreen():
     userpasscheck_label = Label(master=registerframe, text="Wachtwoord verifieren:", font=('Verdana', 15))
     registreer_button = Button(master=registerframe, text="Registreer!",command=lambda: registreer_clicked(str(v.get()), username_entry.get(), userpass_entry.get(), userpasscheck_entry.get()),font=('Verdana', 20), activebackground="#b00000", background="#d00000", bd=0, fg="#fff")
     loginframe_button = Button(master=registerframe, text="Login",command=lambda: toonLoginFrame(),font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",border=0)
-
     # Place
     aanbieder.place(relx=0.55, rely=0.54, anchor=CENTER)
     gebruiker.place(relx=0.46, rely=0.54, anchor=CENTER)
@@ -178,7 +177,6 @@ def Registerscreen():
     userpasscheck_entry.place(relx=0.55, rely=0.68, anchor=CENTER)
     registreer_button.place(relx=0.61, rely=0.75, anchor=CENTER)
     loginframe_button.place(relx=0.94, rely=0.05, anchor=CENTER)
-
 
 def gebruiker_login():
     toonGebruikerHoofdFrame()
@@ -222,6 +220,7 @@ def aanbieder_login():
     global tk_img3
     global list
     global x
+    BACKGROUND(aanbiederhoofdframe, 'img/background.png')
     toonAanbiederHoofdFrame()
     cur.execute('SELECT cover FROM Films WHERE aanbieder = "0"')
     titels = cur.fetchall()
@@ -230,13 +229,20 @@ def aanbieder_login():
         list += [str(titel[0])]
     print(list)
     x = 0
-    b = Button(master=aanbiederhoofdframe, command=lambda: sjaak(1), width=5, height=5, text="<")
+    sjaak(1)
+    b = Button(master=aanbiederhoofdframe, command=lambda: sjaak(2), width=5, height=5, text="<")
     b.place(relx=0.05, rely=0.5, anchor=CENTER)
-    c = Button(master=aanbiederhoofdframe, command=lambda: sjaak(2), width=5, height=5, text=">")
+    c = Button(master=aanbiederhoofdframe, command=lambda: sjaak(1), width=5, height=5, text=">")
     c.place(relx=0.95, rely=0.5, anchor=CENTER)
 
 
-
+def BACKGROUND(frame, img):
+    global filename
+    background = Canvas(master=frame, height=750, width=1300)
+    filename = PhotoImage(file=img)
+    background_label = Label(master=frame, image=filename)
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    background.pack()
 
 
 con = sqlite3.connect('film.db')
@@ -265,23 +271,6 @@ gebruikerhoofdframe = Frame(master=root)
 aanbiederhoofdframe = Frame(master=root)
 registerframe = Frame(master=root)
 
-background = Canvas(master=loginframe, bg="blue", height=750, width=1300)
-filename = PhotoImage(file="img/background.png")
-background_label = Label(master=loginframe, image=filename)
-background_label.place(x=0, y=0, relwidth=1, relheight=1)
-background.pack()
-
-background2 = Canvas(master=registerframe, bg="blue", height=750, width=1300)
-filename2 = PhotoImage(file="img/background.png")
-background_label2 = Label(master=registerframe, image=filename2)
-background_label2.place(x=0, y=0, relwidth=1, relheight=1)
-background2.pack()
-
-background3 = Canvas(master=aanbiederhoofdframe, bg="blue", height=750, width=1300)
-filename3 = PhotoImage(file="img/background.png")
-background_label3 = Label(master=aanbiederhoofdframe, image=filename3)
-background_label3.place(x=0, y=0, relwidth=1, relheight=1)
-background3.pack()
 
 
 
@@ -289,7 +278,7 @@ background3.pack()
 Loginscreen()
 toonLoginFrame()
 
-Registerscreen()
+
 root.mainloop()
 
 con.close()
