@@ -55,12 +55,14 @@ def api_to_database():
 
 #toon Frames Functies
 def toonFilmsGebruikersFrame():
+    global mijnfilm
     loginframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
     filmaanbiedenframe.pack_forget()
     filmsaanbiederframe.pack_forget()
     filmsgebruikerframe.pack()
     Filmsgebruikerscreen()
+    mijnfilm = 1
 
 
 def toonFilmsAanbiederFrame():
@@ -82,6 +84,7 @@ def toonFilmAanbiedenFrame(cover):
 def toonMijnFilmAanbiedenFrame(cover):
     loginframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
+    filmsgebruikerframe.pack_forget()
     filmsaanbiederframe.pack_forget()
     filmaanbiedenframe.pack_forget()
     mijnfilmaanbiedenframe.pack()
