@@ -54,12 +54,23 @@ def api_to_database():
 
 
 #toon Frames Functies
+def toonFilmsGebruikersFrame():
+    loginframe.pack_forget()
+    mijnfilmsaanbiederframe.pack_forget()
+    filmaanbiedenframe.pack_forget()
+    filmsaanbiederframe.pack_forget()
+    filmsgebruikerframe.pack()
+    Filmsgebruikerscreen()
+
+
 def toonFilmsAanbiederFrame():
+    global mijnfilm
     loginframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
     filmaanbiedenframe.pack_forget()
     filmsaanbiederframe.pack()
     Filmsaanbiederscreen()
+    mijnfilm = 2
 
 def toonFilmAanbiedenFrame(cover):
     loginframe.pack_forget()
@@ -68,28 +79,32 @@ def toonFilmAanbiedenFrame(cover):
     filmaanbiedenframe.pack()
     Filmaanbiedenscreen(cover)
 
-def toonMijnFilmsAanbiederFrame():
+def toonMijnFilmAanbiedenFrame(cover):
+    loginframe.pack_forget()
+    mijnfilmsaanbiederframe.pack_forget()
+    filmsaanbiederframe.pack_forget()
+    filmaanbiedenframe.pack_forget()
+    mijnfilmaanbiedenframe.pack()
+    Mijnfilmaanbiedenscreen(cover)
+
+def toonMijnFilmsAanbiederFrame(cover):
+    global mijnfilm
     filmsaanbiederframe.pack_forget()
     mijnfilmsaanbiederframe.pack()
-    Mijnfilmsaanbiederscreen()
+    Mijnfilmsaanbiederscreen(cover)
+    mijnfilm = 1
 
 def toonLoginFrame():
     filmaanbiedenframe.pack_forget()
-    gebruikerhoofdframe.pack_forget()
     registerframe.pack_forget()
     filmsaanbiederframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
     loginframe.pack()
     Loginscreen()
 
-def toonGebruikerHoofdFrame():
-    loginframe.pack_forget()
-    registerframe.pack_forget()
-    gebruikerhoofdframe.pack()
 
 def toonRegisterFrame():
     loginframe.pack_forget()
-    gebruikerhoofdframe.pack_forget()
     registerframe.pack()
     Registerscreen()
 
@@ -108,7 +123,7 @@ def login_clicked(usern, userp):
             if (cur.fetchall()[0][0]) == hashlib.sha256(userpass.encode()).hexdigest():
                 cur.execute("SELECT auth FROM Users WHERE naam = ?", (username,))
                 if cur.fetchall()[0][0] == 0:
-                    gebruiker_login()
+                    toonFilmsGebruikersFrame()
                 else:
                     cur.fetchall()
                     toonFilmsAanbiederFrame()
@@ -151,6 +166,13 @@ def registreer_clicked(auth, usern, userp, userpc):
         popup('Wachtwoord komt niet overheen')
 #GUI FRAMES
 
+def film_aanbieden_clicked(titel):
+    cur.execute('UPDATE Films SET aanbieder = ? WHERE titel = ?', (username, titel))
+    con.commit()
+    popup('Je bied nu de film: {}. aan en is te vinden bij mijn films'.format(titel))
+    toonFilmsAanbiederFrame()
+
+
 def popup(bericht):
     showinfo(title='popup', message=bericht)
 
@@ -174,6 +196,11 @@ def Loginscreen():
     wrong_input_login.place(relx=0.5, rely=0.53, anchor=CENTER)
 
 
+def mijnfilmcheck(cover):
+    if mijnfilm == 1:
+        toonMijnFilmAanbiedenFrame(cover)
+    if mijnfilm == 2:
+        toonFilmAanbiedenFrame(cover)
 
 
 def Registerscreen():
@@ -202,7 +229,16 @@ def Registerscreen():
     registreer_button.place(relx=0.61, rely=0.75, anchor=CENTER)
     loginframe_button.place(relx=0.94, rely=0.05, anchor=CENTER)
 
-def film_img_slide(next):
+def img_slide(frame, user, auth):
+    global count
+    count = 0
+    film_img_slide(0, frame, user, auth)
+    next = Button(master=frame, text=">", command=lambda: film_img_slide(1, frame, user, auth))
+    next.place(relx=0.92, rely=0.6, anchor=CENTER)
+    back = Button(master=frame, text="<", command=lambda: film_img_slide(2, frame, user, auth))
+    back.place(relx=0.08, rely=0.6, anchor=CENTER)
+
+def film_img_slide(next, frame, user, auth):
     global tk_img1
     global tk_img2
     global tk_img3
@@ -215,35 +251,50 @@ def film_img_slide(next):
     elif next == 2:
         count -= 1
     cur.fetchall()
-    cur.execute('SELECT cover FROM Films WHERE aanbieder = "0"')
+    if auth == 0:
+        cur.execute('SELECT cover FROM Films WHERE NOT aanbieder = ?', (str(user),))
+    else:
+        cur.execute('SELECT cover FROM Films WHERE aanbieder = ?', (str(user),))
     filmimglist = []
-    filmtitellist = []
     for cover in cur:
         filmimglist += [cover[0]]
     if count < 0:
         count = 0
     elif count > len(filmimglist) - 4:
         count = len(filmimglist) - 4
-    for i in range(4):
+    if len(filmimglist) < 4:
+        leng = len(filmimglist)
+        count = 0
+    else:
+        leng = 4
+    show_image_slide(frame, count, filmimglist, leng)
+
+def show_image_slide(frame, count, filmimglist, leng):
+    global tk_img1
+    global tk_img2
+    global tk_img3
+    global tk_img4
+    for i in range(leng):
         my_page = urlopen(filmimglist[i+count])
         my_picture = io.BytesIO(my_page.read())
         pil_img = Image.open(my_picture)
         if i == 0:
             tk_img1 = ImageTk.PhotoImage(pil_img)
-            film1 = Button(filmsaanbiederframe, image=tk_img1, command=lambda: toonFilmAanbiedenFrame(filmimglist[i+count-3]))
+            film1 = Button(frame, image=tk_img1, command=lambda: mijnfilmcheck(filmimglist[0+count]))
+            film1.place(relx=0.2, rely=0.6, anchor=CENTER)
         elif i == 1:
             tk_img2 = ImageTk.PhotoImage(pil_img)
-            film2 = Button(filmsaanbiederframe, image=tk_img2, command=lambda: toonFilmAanbiedenFrame(filmimglist[i+count-2]))
+            film2 = Button(frame, image=tk_img2, command=lambda: mijnfilmcheck(filmimglist[1+count]))
+            film2.place(relx=0.4, rely=0.6, anchor=CENTER)
         elif i == 2:
             tk_img3 = ImageTk.PhotoImage(pil_img)
-            film3 = Button(filmsaanbiederframe, image=tk_img3, command=lambda: toonFilmAanbiedenFrame(filmimglist[i+count-1]))
+            film3 = Button(frame, image=tk_img3, command=lambda: mijnfilmcheck(filmimglist[2+count]))
+            film3.place(relx=0.6, rely=0.6, anchor=CENTER)
         elif i == 3:
             tk_img4 = ImageTk.PhotoImage(pil_img)
-            film4 = Button(filmsaanbiederframe, image=tk_img4, command=lambda: toonFilmAanbiedenFrame(filmimglist[i+count]))
-    film1.place(relx=0.2, rely=0.6, anchor=CENTER)
-    film2.place(relx=0.4, rely=0.6, anchor=CENTER)
-    film3.place(relx=0.6, rely=0.6, anchor=CENTER)
-    film4.place(relx=0.8, rely=0.6, anchor=CENTER)
+            film4 = Button(frame, image=tk_img4, command=lambda: mijnfilmcheck(filmimglist[3+count]))
+            film4.place(relx=0.8, rely=0.6, anchor=CENTER)
+
 
 def showcover(frame, url, x, y):
     global tk_img
@@ -262,20 +313,25 @@ def showfilmdescription(frame, titel, x, y):
     label.place(relx=x, rely=y, anchor=NW)
 
 def Filmsaanbiederscreen():
-    global count
-    count = 0
     BACKGROUND(filmsaanbiederframe, 'img/films-a-background.png')
-    films_button = Button(master=filmsaanbiederframe,text='Mijn Films',command=lambda: toonMijnFilmsAanbiederFrame(), width=10, height=2,font=('Verdana', 14), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",border=0)
+    films_button = Button(master=filmsaanbiederframe,text='Mijn Films',command=lambda: toonMijnFilmsAanbiederFrame(0), width=10, height=2,font=('Verdana', 14), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",border=0)
     films_button.place(relx=0.232, rely=0.24, anchor=CENTER)
-    film_img_slide(0)
-    next = Button(master=filmsaanbiederframe, text=">", command=lambda: film_img_slide(1) )
-    next.place(relx=0.92, rely=0.6, anchor=CENTER)
-    back = Button(master=filmsaanbiederframe, text="<", command=lambda: film_img_slide(2))
-    back.place(relx=0.08, rely=0.6, anchor=CENTER)
+    img_slide(filmsaanbiederframe, 0, 1)
     uitlog_button = Button(master=filmsaanbiederframe, text="Uitloggen",command=lambda: toonLoginFrame(),font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",border=0)
     uitlog_button.place(relx=0.92, rely=0.05, anchor=CENTER)
 
+def Mijnfilmsaanbiederscreen(cover):
+    BACKGROUND(mijnfilmsaanbiederframe, 'img/mijnfilms-a-background.png')
+    mijnfilms_button = Button(master=mijnfilmsaanbiederframe, text='Films',command=lambda: toonFilmsAanbiederFrame(), width=10, height=2, font=('Verdana', 14),activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000", border=0)
+    mijnfilms_button.place(relx=0.11, rely=0.24, anchor=CENTER)
+    user = username
+    img_slide(mijnfilmsaanbiederframe, user, 1)
+
+
+
 def Filmaanbiedenscreen(cover):
+    global count
+    count = 0
     BACKGROUND(filmaanbiedenframe, 'img/filmaanbieden-background.png')
     cur.execute('SELECT titel FROM Films WHERE cover=?', (cover,))
     titel = cur.fetchall()[0][0]
@@ -285,20 +341,22 @@ def Filmaanbiedenscreen(cover):
     back_button.place(relx=0.82, rely=0.05, anchor=CENTER)
     uitlog_button = Button(master=filmaanbiedenframe, text="Uitloggen",command=lambda: toonLoginFrame(),font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",border=0)
     uitlog_button.place(relx=0.92, rely=0.05, anchor=CENTER)
-def Mijnfilmsaanbiederscreen():
-    mijnfilmsaanbiederframe.pack()
-    BACKGROUND(mijnfilmsaanbiederframe, 'img/mijnfilms-a-background.png')
-    mijnfilms_button = Button(master=mijnfilmsaanbiederframe, text='Films',command=lambda: toonFilmsAanbiederFrame(), width=10, height=2, font=('Verdana', 14),activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000", border=0)
-    mijnfilms_button.place(relx=0.11, rely=0.24, anchor=CENTER)
+    film_aanbieden_button = Button(master=filmaanbiedenframe, text="Film Aanbieden!", command=lambda: film_aanbieden_clicked(titel),font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0,fg="#b00000", border=0)
+    film_aanbieden_button.place(relx=0.82, rely=0.88, anchor=CENTER)
+
+def Mijnfilmaanbiedenscreen(cover):
+    BACKGROUND(mijnfilmaanbiedenframe, 'img/filmaanbieden-background.png')
+    cur.execute('SELECT titel FROM Films WHERE cover=?', (cover,))
+    titel = cur.fetchall()[0][0]
+    showcover(mijnfilmaanbiedenframe, cover, 0.2, 0.58)
+    showfilmdescription(mijnfilmaanbiedenframe, titel, 0.3, 0.35)
+
+def Filmsgebruikerscreen():
+    BACKGROUND(filmsgebruikerframe, 'img/filmaanbieden-background.png')
+    img_slide(filmsgebruikerframe, 0, 0)
 
 
 
-def gebruiker_login():
-    toonGebruikerHoofdFrame()
-    login_succes_welkom_label = Label(master=gebruikerhoofdframe, text="Welkom gebruiker!")
-    login_succes_welkom_label.pack(pady=10)
-    b = Button(master=gebruikerhoofdframe, command=lambda: toonLoginFrame(), width=12, height=12)
-    b.pack(pady=10)
 
 
 
@@ -332,17 +390,18 @@ root.resizable(False, False)
 
 
 #Frames
+mijnfilmaanbiedenframe = Frame(master=root)
 mijnfilmsaanbiederframe = Frame(master=root)
 loginframe = Frame(master=root)
-gebruikerhoofdframe = Frame(master=root)
 registerframe = Frame(master=root)
 filmsaanbiederframe = Frame(master=root)
 filmaanbiedenframe = Frame(master=root)
+filmsgebruikerframe = Frame(master=root)
 
 
 
 
-toonFilmsAanbiederFrame()
+toonLoginFrame()
 root.mainloop()
 
 con.close()
