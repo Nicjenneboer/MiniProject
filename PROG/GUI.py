@@ -28,7 +28,6 @@ def api_ophalen(dag):
 def api_ophalen_check():
     if str(api_ophalen(0)) and str(api_ophalen(1)) == "<Response [200]>":
         api_to_database()
-        print("Goed")
     else:
         print("Error")
 
@@ -137,24 +136,28 @@ def login_clicked(usern, userp):
     username=userp
     userpass=usern
     wrong=False
-    cur.execute('SELECT * FROM Users')
-    for i in cur:
-        if username == i[0]:
-            cur.execute("SELECT wachtwoord FROM Users WHERE naam = ?", (username,))
-            if (cur.fetchall()[0][0]) == hashlib.sha256(userpass.encode()).hexdigest():
-                cur.execute("SELECT auth FROM Users WHERE naam = ?", (username,))
-                if cur.fetchall()[0][0] == 0:
-                    toonFilmsGebruikersFrame()
+    if username and userpass == "":
+        popup("Vul iets in")
+    else:
+        cur.execute('SELECT * FROM Users')
+        for i in cur:
+            if username == i[0]:
+                cur.execute("SELECT wachtwoord FROM Users WHERE naam = ?", (username,))
+                if (cur.fetchall()[0][0]) == hashlib.sha256(userpass.encode()).hexdigest():
+                    cur.execute("SELECT auth FROM Users WHERE naam = ?", (username,))
+                    if cur.fetchall()[0][0] == 0:
+                        toonFilmsGebruikersFrame()
+                    else:
+                        cur.fetchall()
+                        toonFilmsAanbiederFrame()
+                    wrong=False
                 else:
-                    cur.fetchall()
-                    toonFilmsAanbiederFrame()
-                wrong=False
+                    wrong=True
             else:
                 wrong=True
-        else:
-            wrong=True
-    if wrong == True:
-        popup('Verkeerde inlog gegevens!')
+        if wrong == True:
+            popup('Verkeerde inlog gegevens!')
+
 
 
 def registreer_clicked(auth, usern, userp, userpc):
@@ -196,7 +199,7 @@ def film_aanbieden_clicked(titel):
 
 
 def popup(bericht):
-    showinfo(title='popup', message=bericht)
+    showinfo(title='HomeScoop', message=bericht)
 
 
 def Loginscreen():
@@ -342,9 +345,9 @@ def showcover(frame, url, x, y):
 
 def showfilmdescription(frame, titel, x, y):
     cur.execute('SELECT synopsis FROM Films WHERE titel=?', (titel,))
-    desc=cur.fetchall()[0][0]
-    p='\n'.join(desc[i:i + 120] for i in range(0, len(desc), 120))
-    label=Label(master=frame, background='#fff', text=p, justify=LEFT)
+    desc = cur.fetchall()[0][0]
+    p = '\n'.join(desc[i:i + 120] for i in range(0, len(desc), 120))
+    label = Label(master=frame, background='#fff', text=p, justify=LEFT)
     label.place(relx=x, rely=y, anchor=NW)
 
 
@@ -426,7 +429,7 @@ internet_check()
 root=Tk()
 
 # Root Settings
-root.title("Thuis Bioscoop")
+root.title("HomeScoop")
 root.geometry("{}x{}".format(display_x, display_y))
 root.resizable(False, False)
 
