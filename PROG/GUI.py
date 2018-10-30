@@ -118,6 +118,7 @@ def toonLoginFrame():
     registerframe.pack_forget()
     filmsaanbiederframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
+    filmsgebruikerframe.pack_forget()
     loginframe.pack()
     Loginscreen()
 
@@ -407,6 +408,8 @@ def Mijnfilmaanbiedenscreen(cover):
 def Filmsgebruikerscreen():
     BACKGROUND(filmsgebruikerframe, 'img/filmaanbieden-background.png')
     img_slide(filmsgebruikerframe, 0, 0)
+    uitlog_button=Button(master=filmsgebruikerframe, text="Uitloggen", command=lambda: toonLoginFrame(),font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",border=0)
+    uitlog_button.place(relx=0.92, rely=0.05, anchor=CENTER)
 
 
 def BACKGROUND(frame, img):
