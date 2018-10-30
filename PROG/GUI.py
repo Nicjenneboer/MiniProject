@@ -31,7 +31,7 @@ def api_ophalen_check():
     else:
         print("Error")
 
-# Geeft weer of er wel of geen internet is om het om de GUI te openen.
+# Geeft weer of er wel of geen internet is om het om de GUI te openen .
 def internet_check():
     while True:
         try:
