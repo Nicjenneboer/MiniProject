@@ -111,6 +111,7 @@ def aanbieder():
             bezoekers(titels[q - 1])
         elif menu == 3:
             exit()
+
 def gebruiker():
     while True:
         print("Welkom gebruiker!")
