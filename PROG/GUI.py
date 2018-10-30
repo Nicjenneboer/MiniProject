@@ -15,13 +15,13 @@ import time
 def api_ophalen(dag):
     global date
     key="z9rqxl4qlkw14ozm3z5721oscmu88zoz"
-    datenow=datetime.datetime.now()
+    datenow = datetime.datetime.now()
     if dag == 0:
         date=datenow.strftime("%d-%m-%Y")
     elif dag == 1:
         date=str(int(datenow.strftime("%d")) + 1) + datenow.strftime("-%m-%Y")
     api_url='http://api.filmtotaal.nl/filmsoptv.xml?apikey=' + key + '&dag=' + date + '&sorteer=0'
-    response=requests.get(api_url)
+    response = requests.get(api_url)
     return response
 
 
@@ -48,13 +48,13 @@ def api_to_database():
     titels=cur.fetchall()
     columns=['titel', 'jaar', 'regisseur', 'cast', 'genre', 'land', 'cover', 'duur', 'synopsis', 'imdb_rating',
              'starttijd', 'eindtijd', 'filmtip']
-    field=[]
+    field =[]
     for dag in range(2):
-        gegevens=xmltodict.parse(api_ophalen(dag).text)
+        gegevens = xmltodict.parse(api_ophalen(dag).text)
         for i in range(len(gegevens["filmsoptv"]["film"])):
             for column in columns:
                 field+=[(gegevens["filmsoptv"]["film"][i][column])]
-            field+=['0'] + [date]
+            field += ['0'] + [date]
             if ((field[0],) not in titels):
                 cur.execute("INSERT INTO Films VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", field)
                 con.commit()
@@ -74,7 +74,7 @@ def toonFilmsGebruikersFrame():
     filmsaanbiederframe.pack_forget()
     filmsgebruikerframe.pack()
     Filmsgebruikerscreen()
-    mijnfilm=1
+    mijnfilm = 1
 
 
 def toonFilmsAanbiederFrame():
@@ -213,7 +213,7 @@ def Loginscreen():
     login_button=Button(master=loginframe, text="Login!",
                         command=lambda: login_clicked(username_entry.get(), userpass_entry.get()), font=('Verdana', 20),
                         activebackground="#b00000", background="#d00000", bd=0, fg="#fff")
-    registreerframe_button=Button(master=loginframe, text="Maak een account aan.", command=lambda: toonRegisterFrame(),
+    registreerframe_button = Button(master=loginframe, text="Maak een account aan.", command=lambda: toonRegisterFrame(),
                                   font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0,
                                   fg="#b00000", border=0)
     wrong_input_login=Label(master=loginframe, text="", font=('Verdana', 15))
@@ -336,11 +336,11 @@ def show_image_slide(frame, count, filmimglist, leng):
 
 def showcover(frame, url, x, y):
     global tk_img
-    my_page=urlopen(url)
-    my_picture=io.BytesIO(my_page.read())
-    pil_img=Image.open(my_picture)
-    tk_img=ImageTk.PhotoImage(pil_img)
-    label=Label(frame, image=tk_img)
+    my_page = urlopen(url)
+    my_picture = io.BytesIO(my_page.read())
+    pil_img = Image.open(my_picture)
+    tk_img = ImageTk.PhotoImage(pil_img)
+    label = Label(frame, image=tk_img)
     label.place(relx=x, rely=y, anchor=CENTER)
 
 
@@ -349,6 +349,12 @@ def showfilmdescription(frame, titel, x, y):
     desc = cur.fetchall()[0][0]
     p = '\n'.join(desc[i:i + 120] for i in range(0, len(desc), 120))
     label = Label(master=frame, background='#fff', text=p, justify=LEFT)
+    label.place(relx=x, rely=y, anchor=NW)
+
+def showfilmdescriptionrate(frame, titel, x, y):
+    cur.execute('SELECT imdb_rating FROM Films WHERE titel=?', (titel,))
+    desc = cur.fetchall()[0][0]
+    label = Label(master=frame, background='#fff', text=desc, justify=LEFT)
     label.place(relx=x, rely=y, anchor=NW)
 
 
@@ -367,7 +373,7 @@ def Filmsaanbiederscreen():
 
 def Mijnfilmsaanbiederscreen(cover):
     BACKGROUND(mijnfilmsaanbiederframe, 'img/mijnfilms-a-background.png')
-    mijnfilms_button=Button(master=mijnfilmsaanbiederframe, text='Films', command=lambda: toonFilmsAanbiederFrame(),
+    mijnfilms_button = Button(master=mijnfilmsaanbiederframe, text='Films', command=lambda: toonFilmsAanbiederFrame(),
                             width=10, height=2, font=('Verdana', 14), activebackground="#ffcccc", background="#fff",
                             bd=0, fg="#b00000", border=0)
     mijnfilms_button.place(relx=0.11, rely=0.24, anchor=CENTER)
@@ -377,21 +383,22 @@ def Mijnfilmsaanbiederscreen(cover):
 
 def Filmaanbiedenscreen(cover):
     global count
-    count=0
+    count = 0
     BACKGROUND(filmaanbiedenframe, 'img/filmaanbieden-background.png')
     cur.execute('SELECT titel FROM Films WHERE cover=?', (cover,))
-    titel=cur.fetchall()[0][0]
+    titel = cur.fetchall()[0][0]
     showcover(filmaanbiedenframe, cover, 0.2, 0.58)
     showfilmdescription(filmaanbiedenframe, titel, 0.3, 0.35)
-    back_button=Button(master=filmaanbiedenframe, text="Back", command=lambda: toonFilmsAanbiederFrame(),
+    showfilmdescriptionrate(filmaanbiedenframe,titel, 0.2, 0.35)
+    back_button = Button(master=filmaanbiedenframe, text="Back", command=lambda: toonFilmsAanbiederFrame(),
                        font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",
                        border=0)
     back_button.place(relx=0.82, rely=0.05, anchor=CENTER)
-    uitlog_button=Button(master=filmaanbiedenframe, text="Uitloggen", command=lambda: toonLoginFrame(),
+    uitlog_button = Button(master=filmaanbiedenframe, text="Uitloggen", command=lambda: toonLoginFrame(),
                          font=('Verdana', 20), activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000",
                          border=0)
     uitlog_button.place(relx=0.92, rely=0.05, anchor=CENTER)
-    film_aanbieden_button=Button(master=filmaanbiedenframe, text="Film Aanbieden!",
+    film_aanbieden_button = Button(master=filmaanbiedenframe, text="Film Aanbieden!",
                                  command=lambda: film_aanbieden_clicked(titel), font=('Verdana', 20),
                                  activebackground="#ffcccc", background="#fff", bd=0, fg="#b00000", border=0)
     film_aanbieden_button.place(relx=0.82, rely=0.88, anchor=CENTER)
@@ -400,7 +407,7 @@ def Filmaanbiedenscreen(cover):
 def Mijnfilmaanbiedenscreen(cover):
     BACKGROUND(mijnfilmaanbiedenframe, 'img/filmaanbieden-background.png')
     cur.execute('SELECT titel FROM Films WHERE cover=?', (cover,))
-    titel=cur.fetchall()[0][0]
+    titel = cur.fetchall()[0][0]
     showcover(mijnfilmaanbiedenframe, cover, 0.2, 0.58)
     showfilmdescription(mijnfilmaanbiedenframe, titel, 0.3, 0.35)
 
