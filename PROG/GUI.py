@@ -9,7 +9,8 @@ from PIL import Image, ImageTk
 import io
 from tkinter.messagebox import showinfo
 import time
-
+from datetime import timedelta
+import pyqrcode
 
 # API TO DATABASE FUNCITES
 def api_ophalen(dag):
@@ -17,21 +18,22 @@ def api_ophalen(dag):
     key = "z9rqxl4qlkw14ozm3z5721oscmu88zoz"
     datenow = datetime.datetime.now()
     if dag == 0:
-        date = datenow.strftime("%d-%m-%Y")
+        date=datenow.strftime("%d-%m-%Y")
     elif dag == 1:
-        date = str(int(datenow.strftime("%d")) + 1) + datenow.strftime("-%m-%Y")
-    api_url ='http://api.filmtotaal.nl/filmsoptv.xml?apikey=' + key + '&dag=' + date + '&sorteer=0'
-    response = requests.get(api_url)
+        datenow2 = datetime.datetime.now() + timedelta(days=1)
+        date = datenow2.strftime("%d-%m-%Y")
+    api_url='http://api.filmtotaal.nl/filmsoptv.xml?apikey=' + key + '&dag=' + date + '&sorteer=0'
+    response=requests.get(api_url)
     return response
 
-# Geeft weer of de api opgehaalt kan worden.
+
 def api_ophalen_check():
     if str(api_ophalen(0)) and str(api_ophalen(1)) == "<Response [200]>":
         api_to_database()
     else:
         print("Error")
 
-# Geeft weer of er wel of geen internet is om het om de GUI te openen.
+
 def internet_check():
     while True:
         try:
@@ -41,50 +43,52 @@ def internet_check():
             print("geen internet")
             time.sleep(5)
 
-# API gegevens naar database sorteren
+
 def api_to_database():
-    datenow = datetime.datetime.now()
+    datenow=datetime.datetime.now()
     cur.execute('SELECT titel FROM Films')
-    titels = cur.fetchall()
-    columns = ['titel', 'jaar', 'regisseur', 'cast', 'genre', 'land', 'cover', 'duur', 'synopsis', 'imdb_rating',
+    titels=cur.fetchall()
+    columns=['titel', 'jaar', 'regisseur', 'cast', 'genre', 'land', 'cover', 'duur', 'synopsis', 'imdb_rating',
              'starttijd', 'eindtijd', 'filmtip']
-    field = []
+    field=[]
     for dag in range(2):
-        gegevens = xmltodict.parse(api_ophalen(dag).text)
+        gegevens=xmltodict.parse(api_ophalen(dag).text)
         for i in range(len(gegevens["filmsoptv"]["film"])):
             for column in columns:
-                field += [(gegevens["filmsoptv"]["film"][i][column])]
-            field += ['0'] + [date]
+                field+=[(gegevens["filmsoptv"]["film"][i][column])]
+            field+=['0'] + [date]
             if ((field[0],) not in titels):
                 cur.execute("INSERT INTO Films VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", field)
                 con.commit()
-            field = []
-    yesterday = str(int(datenow.strftime("%d")) - 1) + datenow.strftime("-%m-%Y")
-    cur.execute('DELETE FROM Films WHERE datum=?', (yesterday,))
-    cur.execute('DELETE FROM Tickets WHERE datum=?', (yesterday,))
+            field=[]
+    yesterday= datetime.datetime.now() + timedelta(days=-1)
+    cur.execute('DELETE FROM Films WHERE datum=?', (yesterday.strftime("%d-%m-%Y"),))
+    cur.execute('DELETE FROM Tickets WHERE datum=?', (yesterday.strftime("%d-%m-%Y"),))
     con.commit()
 
 
 # toon Frames Functies
 def toonFilmsGebruikersFrame():
-    global mijnfilm
     loginframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
     filmaanbiedenframe.pack_forget()
     filmsaanbiederframe.pack_forget()
+    filmgebruikenframe.pack_forget()
+    mijnfilmsgebruikerframe.pack_forget()
     filmsgebruikerframe.pack()
     Filmsgebruikerscreen()
-    mijnfilm = 1
 
 
 def toonFilmsAanbiederFrame():
-    global mijnfilm
+    def toonFilmGebruikenFrame(cover):
+    filmgebruikenframe.pack()
+    filmsgebruikerframe.pack_forget()
+    Filmgebruikenscreen(cover)
     loginframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
     filmaanbiedenframe.pack_forget()
     filmsaanbiederframe.pack()
     Filmsaanbiederscreen()
-    mijnfilm = 2
 
 
 def toonFilmAanbiedenFrame(cover):
@@ -104,13 +108,26 @@ def toonMijnFilmAanbiedenFrame(cover):
     mijnfilmaanbiedenframe.pack()
     Mijnfilmaanbiedenscreen(cover)
 
+    def toonMijnFilmGebruikenFrame(cover):
+    mijnfilmsgebruikerframe.pack_forget()
+    mijnfilmgebruikenframe.pack()
+    Mijnfilmgebruikenscreen(cover)
 
-def toonMijnFilmsAanbiederFrame(cover):
-    global mijnfilm
+    def toonMijnFilmsGebruikersFrame():
+            loginframe.pack_forget()
+
+    filmsgebruikerframe.pack_forget()
+    mijnfilmgebruikenframe.pack_forget()
+    mijnfilmsgebruikerframe.pack()
+    Mijnfilmsgebruikerscreen()
+
+    def toonMijnFilmsAanbiederFrame():
     filmsaanbiederframe.pack_forget()
     mijnfilmsaanbiederframe.pack()
-    Mijnfilmsaanbiederscreen(cover)
-    mijnfilm = 1
+    filmsaanbiederframe.pack_forget()
+    mijnfilmaanbiedenframe.pack_forget()
+    mijnfilmsaanbiederframe.pack()
+    Mijnfilmsaanbiederscreen()
 
 
 def toonLoginFrame():
@@ -119,6 +136,10 @@ def toonLoginFrame():
     filmsaanbiederframe.pack_forget()
     mijnfilmsaanbiederframe.pack_forget()
     filmsgebruikerframe.pack_forget()
+    mijnfilmaanbiedenframe.pack_forget()
+    filmgebruikenframe.pack_forget()
+    mijnfilmgebruikenframe.pack_forget()
+    mijnfilmsgebruikerframe.pack_forget()
     loginframe.pack()
     Loginscreen()
 
@@ -130,14 +151,13 @@ def toonRegisterFrame():
 
 
 # Button click functies
-# Ook de popups: voor als de informatie niet goed wordt ingevuld
 
 
 def login_clicked(usern, userp):
     global username
-    username = userp
-    userpass = usern
-    wrong = False
+    username=userp
+    userpass=usern
+    wrong=False
     if username and userpass == "":
         popup("Vul iets in")
     else:
@@ -152,21 +172,21 @@ def login_clicked(usern, userp):
                     else:
                         cur.fetchall()
                         toonFilmsAanbiederFrame()
-                    wrong = False
+                    wrong=False
                 else:
-                    wrong = True
+                    wrong=True
             else:
-                wrong = True
+                wrong=True
         if wrong == True:
             popup('Verkeerde inlog gegevens!')
 
-# Accounts aanmaken voor gebruiker en aanbieder.(via buttons)
+
 
 def registreer_clicked(auth, usern, userp, userpc):
-    gebruikersnaambestaatniet = False
-    naam = usern
-    autho = auth
-    ww = hashlib.sha256(userp.encode()).hexdigest()
+    gebruikersnaambestaatniet=False
+    naam=usern
+    autho=auth
+    ww=hashlib.sha256(userp.encode()).hexdigest()
     if userp == userpc:
         cur.execute('SELECT * FROM Users')
         for i in cur:
